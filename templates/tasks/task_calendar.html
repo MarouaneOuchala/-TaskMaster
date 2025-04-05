@@ -1,0 +1,220 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Task Calendar - Task Manager{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/task_calendar.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="calendar-container">
+        <div class="calendar-header">
+            <h1 class="calendar-title">Task Calendar</h1>
+            <div class="calendar-nav">
+                <button id="prevMonth" class="btn btn-light">
+                    <i class="fas fa-chevron-left"></i>
+                </button>
+                <button id="nextMonth" class="btn btn-light">
+                    <i class="fas fa-chevron-right"></i>
+                </button>
+            </div>
+        </div>
+
+        <div class="calendar-filters">
+            <div class="filter-group">
+                <label class="filter-label">Status:</label>
+                <select id="statusFilter" class="filter-select">
+                    <option value="">All</option>
+                    <option value="todo">To Do</option>
+                    <option value="in_progress">In Progress</option>
+                    <option value="completed">Completed</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label class="filter-label">Priority:</label>
+                <select id="priorityFilter" class="filter-select">
+                    <option value="">All</option>
+                    <option value="high">High</option>
+                    <option value="medium">Medium</option>
+                    <option value="low">Low</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label class="filter-label">Category:</label>
+                <select id="categoryFilter" class="filter-select">
+                    <option value="">All</option>
+                    {% for category in categories %}
+                    <option value="{{ category.id }}">{{ category.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+
+        <div class="calendar-grid">
+            <div class="calendar-weekday">Sun</div>
+            <div class="calendar-weekday">Mon</div>
+            <div class="calendar-weekday">Tue</div>
+            <div class="calendar-weekday">Wed</div>
+            <div class="calendar-weekday">Thu</div>
+            <div class="calendar-weekday">Fri</div>
+            <div class="calendar-weekday">Sat</div>
+        </div>
+    </div>
+</div>
+
+<a href="{% url 'tasks:task-create' %}" class="add-task-btn">
+    <i class="fas fa-plus"></i>
+</a>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const tasks = {{ tasks_json|safe }};
+        let currentDate = new Date();
+        let currentMonth = currentDate.getMonth();
+        let currentYear = currentDate.getFullYear();
+
+        function getStatusIcon(status) {
+            switch(status) {
+                case 'todo':
+                    return '<i class="fas fa-circle status-icon status-todo" title="To Do"></i>';
+                case 'in_progress':
+                    return '<i class="fas fa-spinner fa-spin status-icon status-in-progress" title="In Progress"></i>';
+                case 'completed':
+                    return '<i class="fas fa-check-circle status-icon status-completed" title="Completed"></i>';
+                default:
+                    return '';
+            }
+        }
+
+        function renderCalendar() {
+            const firstDay = new Date(currentYear, currentMonth, 1);
+            const lastDay = new Date(currentYear, currentMonth + 1, 0);
+            const startingDay = firstDay.getDay();
+            const totalDays = lastDay.getDate();
+
+            const calendarGrid = document.querySelector('.calendar-grid');
+            const weekdays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+            
+            // Clear existing days
+            while (calendarGrid.children.length > 7) {
+                calendarGrid.removeChild(calendarGrid.lastChild);
+            }
+
+            // Add empty cells for days before the first day of the month
+            for (let i = 0; i < startingDay; i++) {
+                const emptyDay = document.createElement('div');
+                emptyDay.className = 'calendar-day other-month';
+                calendarGrid.appendChild(emptyDay);
+            }
+
+            // Add days of the month
+            for (let day = 1; day <= totalDays; day++) {
+                const dayElement = document.createElement('div');
+                dayElement.className = 'calendar-day';
+                
+                // Check if it's today
+                const today = new Date();
+                if (day === today.getDate() && currentMonth === today.getMonth() && currentYear === today.getFullYear()) {
+                    dayElement.classList.add('today');
+                }
+
+                const dayNumber = document.createElement('div');
+                dayNumber.className = 'day-number';
+                dayNumber.textContent = day;
+                dayElement.appendChild(dayNumber);
+
+                // Add tasks for this day
+                const dayTasks = tasks.filter(task => {
+                    const taskDate = new Date(task.due_date);
+                    return taskDate.getDate() === day && 
+                           taskDate.getMonth() === currentMonth && 
+                           taskDate.getFullYear() === currentYear;
+                });
+
+                // Create a container for tasks
+                const tasksContainer = document.createElement('div');
+                tasksContainer.className = 'day-tasks';
+                dayElement.appendChild(tasksContainer);
+
+                dayTasks.forEach(task => {
+                    const taskElement = document.createElement('div');
+                    taskElement.className = `task-item priority-${task.priority}`;
+                    taskElement.dataset.taskId = task.id;
+                    taskElement.innerHTML = `
+                        <div class="task-title">${task.title}</div>
+                        <div class="task-time">${new Date(task.due_date).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</div>
+                        <div class="task-status-container">
+                            ${getStatusIcon(task.status)}
+                        </div>
+                    `;
+                    taskElement.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        window.location.href = `/tasks/${task.id}/`;
+                    });
+                    tasksContainer.appendChild(taskElement);
+                });
+
+                // Make the entire day clickable
+                dayElement.addEventListener('click', () => {
+                    window.location.href = `/tasks/day/${currentYear}/${currentMonth + 1}/${day}/`;
+                });
+
+                calendarGrid.appendChild(dayElement);
+            }
+
+            // Update month/year display
+            const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+            document.querySelector('.calendar-title').textContent = `${monthNames[currentMonth]} ${currentYear}`;
+        }
+
+        // Event listeners for navigation buttons
+        document.getElementById('prevMonth').addEventListener('click', () => {
+            currentMonth--;
+            if (currentMonth < 0) {
+                currentMonth = 11;
+                currentYear--;
+            }
+            renderCalendar();
+        });
+
+        document.getElementById('nextMonth').addEventListener('click', () => {
+            currentMonth++;
+            if (currentMonth > 11) {
+                currentMonth = 0;
+                currentYear++;
+            }
+            renderCalendar();
+        });
+
+        // Filter functionality
+        function applyFilters() {
+            const statusFilter = document.getElementById('statusFilter').value;
+            const priorityFilter = document.getElementById('priorityFilter').value;
+            const categoryFilter = document.getElementById('categoryFilter').value;
+
+            const taskElements = document.querySelectorAll('.task-item');
+            taskElements.forEach(taskElement => {
+                const task = tasks.find(t => t.id === parseInt(taskElement.dataset.taskId));
+                if (task) {
+                    const statusMatch = !statusFilter || task.status === statusFilter;
+                    const priorityMatch = !priorityFilter || task.priority === priorityFilter;
+                    const categoryMatch = !categoryFilter || task.category === parseInt(categoryFilter);
+
+                    taskElement.style.display = statusMatch && priorityMatch && categoryMatch ? 'block' : 'none';
+                }
+            });
+        }
+
+        document.getElementById('statusFilter').addEventListener('change', applyFilters);
+        document.getElementById('priorityFilter').addEventListener('change', applyFilters);
+        document.getElementById('categoryFilter').addEventListener('change', applyFilters);
+
+        // Initial render
+        renderCalendar();
+    });
+</script>
+{% endblock %} 

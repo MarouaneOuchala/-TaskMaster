@@ -1,0 +1,309 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Analytics - Task Manager{% endblock %}
+
+{% block extra_head %}
+<style>
+.chart-container {
+    position: relative;
+    height: 300px;
+    width: 100%;
+}
+.loading {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+}
+.loading i {
+    font-size: 2rem;
+    color: #6c757d;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container fade-in">
+    <div class="row mb-4">
+        <div class="col">
+            <h1 class="display-4 text-center">
+                <i class="fas fa-chart-line me-2"></i>Task Analytics
+            </h1>
+        </div>
+    </div>
+
+    <!-- Summary Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card bg-primary text-white h-100">
+                <div class="card-body text-center">
+                    <i class="fas fa-tasks fa-2x mb-3"></i>
+                    <h3 class="card-title h5">Total Tasks</h3>
+                    <p class="display-4 mb-0">{{ total_tasks }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-success text-white h-100">
+                <div class="card-body text-center">
+                    <i class="fas fa-check-circle fa-2x mb-3"></i>
+                    <h3 class="card-title h5">Completed</h3>
+                    <p class="display-4 mb-0">{{ completed_tasks }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-warning text-white h-100">
+                <div class="card-body text-center">
+                    <i class="fas fa-spinner fa-2x mb-3"></i>
+                    <h3 class="card-title h5">In Progress</h3>
+                    <p class="display-4 mb-0">{{ in_progress_tasks }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-info text-white h-100">
+                <div class="card-body text-center">
+                    <i class="fas fa-list fa-2x mb-3"></i>
+                    <h3 class="card-title h5">To Do</h3>
+                    <p class="display-4 mb-0">{{ todo_tasks }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts -->
+    <div class="row">
+        <!-- Task Status Distribution -->
+        <div class="col-md-6 mb-4">
+            <div class="card shadow-sm h-100">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-chart-pie me-2"></i>Task Status Distribution
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="chart-container">
+                        <div class="loading">
+                            <i class="fas fa-spinner fa-spin"></i>
+                            <p>Loading chart...</p>
+                        </div>
+                        <canvas id="statusChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Category Distribution -->
+        <div class="col-md-6 mb-4">
+            <div class="card shadow-sm h-100">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-chart-bar me-2"></i>Tasks by Category
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="chart-container">
+                        <div class="loading">
+                            <i class="fas fa-spinner fa-spin"></i>
+                            <p>Loading chart...</p>
+                        </div>
+                        <canvas id="categoryChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Completion Trends -->
+        <div class="col-md-12 mb-4">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-chart-line me-2"></i>Completion Trends
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="chart-container">
+                        <div class="loading">
+                            <i class="fas fa-spinner fa-spin"></i>
+                            <p>Loading chart...</p>
+                        </div>
+                        <canvas id="trendChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<!-- Load Chart.js from CDN with a specific version for stability -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.0/dist/chart.min.js"></script>
+<script>
+// Wait for both DOM and Chart.js to be fully loaded
+window.addEventListener('load', function() {
+    // Check if Chart is loaded
+    if (typeof Chart === 'undefined') {
+        console.error('Chart.js is not loaded');
+        document.querySelectorAll('.loading').forEach(loader => {
+            loader.innerHTML = '<p>Error loading charts. Please refresh the page.</p>';
+        });
+        return;
+    }
+
+    // Common chart options
+    const commonOptions = {
+        responsive: true,
+        maintainAspectRatio: false,
+        animation: {
+            duration: 2000,
+            easing: 'easeInOutQuart'
+        }
+    };
+
+    try {
+        // Task Status Distribution Chart
+        const statusCtx = document.getElementById('statusChart').getContext('2d');
+        new Chart(statusCtx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Completed', 'In Progress', 'To Do'],
+                datasets: [{
+                    data: [{{ completed_tasks }}, {{ in_progress_tasks }}, {{ todo_tasks }}],
+                    backgroundColor: ['#28a745', '#ffc107', '#17a2b8'],
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                ...commonOptions,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            padding: 20,
+                            font: {
+                                size: 12
+                            }
+                        }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                const label = context.label || '';
+                                const value = context.raw || 0;
+                                const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                const percentage = total > 0 ? Math.round((value / total) * 100) : 0;
+                                return `${label}: ${value} (${percentage}%)`;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+
+        // Category Distribution Chart
+        const categoryCtx = document.getElementById('categoryChart').getContext('2d');
+        new Chart(categoryCtx, {
+            type: 'bar',
+            data: {
+                labels: [{% for cat in category_distribution %}'{{ cat.name }}'{% if not forloop.last %}, {% endif %}{% endfor %}],
+                datasets: [{
+                    label: 'Tasks',
+                    data: [{% for cat in category_distribution %}{{ cat.task_count }}{% if not forloop.last %}, {% endif %}{% endfor %}],
+                    backgroundColor: '#007bff',
+                    borderRadius: 5
+                }]
+            },
+            options: {
+                ...commonOptions,
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            stepSize: 1,
+                            font: {
+                                size: 12
+                            }
+                        }
+                    },
+                    x: {
+                        ticks: {
+                            font: {
+                                size: 12
+                            }
+                        }
+                    }
+                }
+            }
+        });
+
+        // Completion Trends Chart
+        const trendCtx = document.getElementById('trendChart').getContext('2d');
+        new Chart(trendCtx, {
+            type: 'line',
+            data: {
+                labels: ['Last Week', 'Last Month'],
+                datasets: [{
+                    label: 'Completed Tasks',
+                    data: [{{ weekly_completion }}, {{ monthly_completion }}],
+                    borderColor: '#28a745',
+                    backgroundColor: 'rgba(40, 167, 69, 0.1)',
+                    tension: 0.4,
+                    fill: true
+                }]
+            },
+            options: {
+                ...commonOptions,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            padding: 20,
+                            font: {
+                                size: 12
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            stepSize: 1,
+                            font: {
+                                size: 12
+                            }
+                        }
+                    },
+                    x: {
+                        ticks: {
+                            font: {
+                                size: 12
+                            }
+                        }
+                    }
+                }
+            }
+        });
+
+        // Remove loading indicators
+        document.querySelectorAll('.loading').forEach(loader => {
+            loader.style.display = 'none';
+        });
+    } catch (error) {
+        console.error('Error initializing charts:', error);
+        document.querySelectorAll('.loading').forEach(loader => {
+            loader.innerHTML = '<p>Error loading charts. Please refresh the page.</p>';
+        });
+    }
+});
+</script>
+{% endblock %} 

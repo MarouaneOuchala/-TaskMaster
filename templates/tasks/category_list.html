@@ -1,0 +1,49 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}Categories - Task Manager{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4 fade-in">
+    <h1 class="mb-0">
+        <i class="fas fa-folder me-2"></i>Categories
+    </h1>
+    <a href="{% url 'tasks:category-create' %}" class="btn btn-primary">
+        <i class="fas fa-plus me-2"></i>New Category
+    </a>
+</div>
+
+{% if categories %}
+    <div class="row fade-in">
+        {% for category in categories %}
+            <div class="col-md-4 mb-4">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h5 class="card-title mb-0">
+                                <i class="fas fa-tag me-2 text-primary"></i>{{ category.name }}
+                            </h5>
+                            <span class="badge bg-primary">{{ category.tasks.count }} tasks</span>
+                        </div>
+                        <p class="card-text text-muted">{{ category.description|default:"No description" }}</p>
+                        <div class="d-flex justify-content-end gap-2 mt-3">
+                            <a href="{% url 'tasks:category-update' category.pk %}" class="btn btn-sm btn-outline-primary">
+                                <i class="fas fa-edit me-1"></i>Edit
+                            </a>
+                            <a href="{% url 'tasks:category-delete' category.pk %}" class="btn btn-sm btn-outline-danger">
+                                <i class="fas fa-trash me-1"></i>Delete
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+{% else %}
+    <div class="alert alert-info fade-in">
+        <i class="fas fa-info-circle me-2"></i>
+        You don't have any categories yet.
+        <a href="{% url 'tasks:category-create' %}" class="alert-link">Create your first category</a>
+    </div>
+{% endif %}
+{% endblock %} 

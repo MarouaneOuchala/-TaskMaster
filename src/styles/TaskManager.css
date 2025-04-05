@@ -1,0 +1,141 @@
+/* Custom scrollbar styles */
+.task-list::-webkit-scrollbar {
+  width: 8px;
+}
+
+.task-list::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.task-list::-webkit-scrollbar-thumb {
+  background-color: rgba(156, 163, 175, 0.5);
+  border-radius: 4px;
+}
+
+.dark .task-list::-webkit-scrollbar-thumb {
+  background-color: rgba(75, 85, 99, 0.5);
+}
+
+/* Smooth transitions for dark mode */
+.dark-mode-transition {
+  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+}
+
+/* Task card hover animation */
+.task-card {
+  transform: translateY(0);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.task-card:hover {
+  transform: translateY(-2px);
+}
+
+/* Priority label gradients */
+.priority-high {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+}
+
+.priority-medium {
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+}
+
+.priority-low {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+}
+
+/* Checkbox custom styles */
+.custom-checkbox {
+  position: relative;
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  border: 2px solid #e5e7eb;
+  border-radius: 6px;
+  outline: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.dark .custom-checkbox {
+  border-color: #374151;
+}
+
+.custom-checkbox:checked {
+  border-color: #3b82f6;
+  background-color: #3b82f6;
+}
+
+.custom-checkbox:checked::before {
+  content: '✓';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: white;
+  font-size: 12px;
+}
+
+/* Progress bar animation */
+.progress-bar {
+  height: 6px;
+  background: #e5e7eb;
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.progress-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #3b82f6 0%, #60a5fa 100%);
+  transition: width 0.3s ease;
+}
+
+/* Category badge animation */
+.category-badge {
+  position: relative;
+  overflow: hidden;
+}
+
+.category-badge::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.2),
+    transparent
+  );
+  transition: left 0.5s ease;
+}
+
+.category-badge:hover::before {
+  left: 100%;
+}
+
+/* Responsive sidebar transition */
+@media (max-width: 768px) {
+  .sidebar-transition {
+    transition: transform 0.3s ease-in-out;
+  }
+}
+
+/* Dark mode toggle animation */
+.dark-mode-toggle {
+  position: relative;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  transition: background-color 0.3s ease;
+}
+
+.dark-mode-toggle:hover {
+  background-color: rgba(156, 163, 175, 0.1);
+}
+
+.dark .dark-mode-toggle:hover {
+  background-color: rgba(75, 85, 99, 0.1);
+} 
